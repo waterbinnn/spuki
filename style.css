@@ -1,0 +1,435 @@
+/* After gubo.kr: white page, black 1px rules, small grotesk type, nothing else. */
+:root {
+  --ink: #000;
+  --paper: #fff;
+  --mute: #8a8a8a;
+  --gutter: 16px;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 14px/1.4 "Pretendard", system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+a { color: inherit; text-decoration: none; }
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 0 var(--gutter);
+}
+
+header.bar {
+  height: 56px;
+  border-bottom: 1px solid var(--ink);
+}
+
+.logo { display: block; line-height: 0; }
+#wordmark { height: 30px; width: auto; shape-rendering: crispEdges; }
+#wordmark rect { fill: var(--ink); }
+#wordmark rect.note { fill: #ff5ea3; }
+
+nav { display: flex; gap: 28px; font-size: 16px; }
+nav a:hover { text-decoration: underline; text-underline-offset: 4px; }
+
+main { position: relative; min-height: 0; }
+
+#stage { position: absolute; inset: 0; cursor: grab; touch-action: none; }
+#stage:active { cursor: grabbing; }
+#stage canvas { display: block; outline: none; }
+
+.hint, .loading {
+  position: absolute;
+  pointer-events: none;
+}
+/* Model name, what it is, and (TULIP) its front colours right under them. */
+.intro { position: absolute; top: 14px; left: var(--gutter); z-index: 1; }
+.caption { display: flex; gap: 12px; pointer-events: none; }
+.caption #name { font-weight: 600; }
+.caption #desc { color: var(--mute); }
+.hint { bottom: 14px; right: var(--gutter); color: var(--mute); font-size: 12px; }
+/* The sample track, bottom left across from the hint: play it, then shape it with the EQ. */
+.play {
+  position: absolute;
+  bottom: 10px;
+  left: var(--gutter);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.play i {
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 5px 0 5px 8px;
+  border-color: transparent transparent transparent currentColor;
+}
+.play[aria-pressed="true"] i { width: 8px; height: 10px; border: 0; border-left: 3px solid; border-right: 3px solid; }
+.play-track { color: var(--mute); }
+.play:hover [data-label] { text-decoration: underline; text-underline-offset: 3px; }
+.loading { top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--mute); }
+.loading[hidden] { display: none; }
+
+.picker {
+  min-height: 56px;
+  border-top: 1px solid var(--ink);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* The speakers stood along an arc under the one on show: drag the arc round, or click one to
+   bring it up. Each sits on a circle whose centre is far below the page (main.js
+   turns them about it), so they tilt away to either side. */
+.ring {
+  --ring-r: 2000px;
+  position: absolute; left: 0; right: 0; bottom: 30px; height: 190px;
+  list-style: none; overflow: hidden; pointer-events: none;
+  transition: opacity 0.3s, visibility 0s;
+}
+.ring li {
+  position: absolute; left: 50%; top: 10px; width: 97px; height: 110px;
+  transform-origin: 50% var(--ring-r); will-change: transform, opacity;
+}
+.ring button {
+  position: relative; display: block; width: 100%; height: 100%; padding: 0; border: 0; background: none;
+  cursor: pointer; pointer-events: auto; touch-action: none; transition: transform 0.2s;
+}
+.ring button:hover { transform: translateY(-5px) scale(1.06); }
+/* Its name under it, so the two to either side read as speakers to pick. */
+.ring button::after {
+  content: attr(aria-label); position: absolute; left: 50%; top: 100%; margin-top: 8px; translate: -50% 0;
+  font: inherit; font-size: 11px; letter-spacing: 0.04em; color: var(--mute); white-space: nowrap;
+}
+.ring button:hover::after { color: var(--ink); }
+.ring img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; user-select: none; }
+.console-open .ring, .doc-open .ring { opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0s 0.3s; }
+
+/* Colour rows, as the app's DESIGN page: label and picked name on one line, the chips under it.
+   Fronts are small panels, horns are round; the picked one gets a thin grey ring. */
+.chips { margin-top: 14px; }
+.chips + .chips { margin-top: 12px; }
+.chips[hidden] { display: none; }
+.chip-head { display: flex; align-items: center; gap: 10px; height: 20px; margin-bottom: 6px; font-size: 12px; }
+.chip-label { width: 44px; font-size: 11px; letter-spacing: 0.04em; color: var(--mute); }
+.chip-name { color: #4a4a4a; white-space: nowrap; }
+#finishes, #horns { display: flex; gap: 6px; list-style: none; }
+#finishes li, #horns li { flex: none; }
+#finishes button, #horns button {
+  display: block;
+  padding: 2px;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+#finishes button::before, #horns button::before {
+  content: "";
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: inherit;
+  background: var(--swatch);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+  transition: transform 0.15s;
+}
+#finishes button { border-radius: 6px; }
+#finishes button::before { border-radius: 4px; }
+#finishes button:hover::before, #horns button:hover::before { transform: scale(1.1); }
+#finishes button[aria-pressed="true"], #horns button[aria-pressed="true"] { border-color: #9a9a9a; }
+
+/* Shuffle sits at the end of the last colour row's head line. */
+.shuffle {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin: -2px -4px -2px auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #4a4a4a;
+  cursor: pointer;
+}
+.shuffle[hidden] { display: none; }
+.shuffle svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.25s; }
+.shuffle:hover { color: var(--ink); }
+.shuffle:hover svg { transform: scale(1.12); }
+
+.picker-end { display: flex; align-items: center; gap: 28px; }
+/* For whoever looks closely: barely there. */
+.credit { font-size: 11px; color: #c4c4c4; white-space: nowrap; }
+.credit:hover { color: var(--mute); }
+
+/* The console's disc, small, up in the corner: tap it to bring the console in. */
+.disc-toggle {
+  position: absolute;
+  top: 28px;
+  right: var(--gutter);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  animation: float 4s ease-in-out infinite;
+  cursor: pointer;
+}
+/* The middle of the console's wheel, small: a dark disc with the logo's note glowing on it. */
+.disc-art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, #1d1d1d, #111 72%);
+  /* Lifted off the page: a soft shadow well below it, as if it hovers. */
+  box-shadow: 0 22px 26px -14px rgba(0, 0, 0, 0.45);
+  transition: transform 0.2s, opacity 0.3s;
+}
+.disc-art svg { width: 12px; height: 16px; fill: #ff5ea3; filter: drop-shadow(0 0 4px rgba(255, 94, 163, 0.8)); }
+.disc-toggle:hover .disc-art { transform: scale(1.06); }
+.disc-toggle[aria-expanded="true"] .disc-art { opacity: 0.35; }
+@keyframes float { 50% { translate: 0 -4px; } }
+/* Until the EQ has been opened once, a cursor comes over and presses the disc, to show it can be. */
+.disc-cursor {
+  position: absolute; left: 50%; top: 32px; width: 18px; height: 26px;
+  fill: var(--ink); stroke: var(--paper); stroke-width: 1; stroke-linejoin: round;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.25));
+  transform-origin: 0 0; pointer-events: none; opacity: 0;
+  animation: point 3.6s ease-in-out infinite;
+}
+.disc-art::after {
+  content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px solid #ff5ea3; opacity: 0;
+  animation: ring 3.6s ease-out infinite;
+}
+@keyframes point {
+  0% { translate: -52px 46px; opacity: 0; }
+  14% { opacity: 1; }
+  42%, 80% { translate: 3px 5px; opacity: 1; scale: 1; }
+  47% { translate: 3px 5px; scale: 0.84; }
+  52% { scale: 1; }
+  100% { translate: -52px 46px; opacity: 0; }
+}
+@keyframes ring {
+  0%, 46% { scale: 1; opacity: 0; }
+  48% { scale: 1; opacity: 0.9; }
+  78%, 100% { scale: 1.45; opacity: 0; }
+}
+.eq-seen .disc-cursor, .eq-seen .disc-art::after { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .disc-toggle, .disc-art::after { animation: none; }
+  .disc-cursor { animation: none; opacity: 1; translate: 3px 5px; }
+}
+
+/* The console itself, sliding in from the right at the app's 534×704 proportions and its size on
+   screen (the volume keys stick out past the body's right edge, so the body clips itself, not
+   this box). */
+.console {
+  position: absolute;
+  top: 50%;
+  right: calc(var(--gutter) + 88px);
+  height: min(calc(100% - 88px), 564px);
+  aspect-ratio: 534 / 704;
+  transform: translate(calc(100% + 140px), -50%);
+  opacity: 0;
+  transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s;
+}
+.console-open .console { transform: translate(0, -50%); opacity: 1; }
+.console-open .hint { opacity: 0; }
+.hint, .play { transition: opacity 0.3s; }
+
+.deck { position: absolute; left: 0; top: 0; width: 534px; height: 704px; transform-origin: 0 0; user-select: none; }
+.deck > *, .deck-face > * { position: absolute; }
+.deck-face { left: 0; top: 0; width: 528px; height: 704px; border-radius: 22px; overflow: hidden; box-shadow: 0 40px 70px -30px rgba(0, 0, 0, 0.55); }
+.deck-body { inset: 0; width: 528px; height: 704px; }
+/* console.js sets --grain and the other theme values on .deck. */
+.deck-grain { inset: 0; width: 528px; height: 704px; mix-blend-mode: soft-light; opacity: var(--grain, 0.3); pointer-events: none; }
+.deck-screen { left: 24px; top: 30px; width: 480px; height: 360px; border-radius: 6px; box-shadow: var(--screen-edge, none); touch-action: none; }
+.deck-wheel { border-radius: 50%; touch-action: none; }
+.deck-disc { border-radius: 50%; cursor: pointer; }
+.deck-disc > * { position: absolute; }
+.deck-disc img { inset: 0; width: 100%; height: 100%; }
+.deck-cap-grain { inset: 3px; width: auto; height: auto; border-radius: 50%; opacity: var(--cap-grain, 0); }
+.deck-disc .deck-cap-grain { width: calc(100% - 6px); height: calc(100% - 6px); }
+/* The logo's note on the centre button: in the primary colour while sound plays. */
+.deck-note {
+  left: 50%; top: 50%; width: 18px; height: 24px; margin: -12px 0 0 -9px;
+  fill: var(--lit, #ff5ea3); filter: var(--glow, none); pointer-events: none;
+}
+.deck-note.off { fill: var(--note-off, #292929); filter: none; }
+/* Where an EQ curve is pasted: a text box over the screen, in the screen's own ink. console.js places it. */
+.deck-paste {
+  box-sizing: border-box; padding: 8px; border: 0; outline: 0; resize: none; background: none;
+  font: 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink, #f4ecd8); caret-color: var(--lit, #ff5ea3);
+}
+.deck-paste::placeholder { color: var(--dim, #777); opacity: 1; }
+/* Only the strip past the body's edge shows; pressed, a key goes in. */
+.deck-side { z-index: 1; left: 518px; width: 16px; padding: 0; border: 0; background: none; overflow: hidden; cursor: pointer; touch-action: none; }
+.deck-side img { position: absolute; left: 6px; top: -2px; width: 10px; height: 52px; clip-path: inset(0 0 0 4px); transition: transform 0.12s ease-out; }
+.deck-side:active img { transform: translateX(-2px); clip-path: inset(0 0 0 6px); transition-duration: 0.04s; }
+
+/* Guide and install: a panel from the right, like the text column on everyday-practice.com. */
+.doc {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  width: min(600px, 100vw);
+  display: grid;
+  grid-template-rows: 56px 1fr;
+  background: var(--paper);
+  border-left: 1px solid var(--ink);
+  transform: translateX(100%);
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s 0.6s;
+  visibility: hidden;
+}
+.doc-open .doc { transform: none; visibility: visible; transition-delay: 0s; }
+.doc-open .hint, .doc-open .disc-toggle, .doc-open .play { opacity: 0; pointer-events: none; }
+.disc-toggle { transition: opacity 0.3s, right 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+/* Wide enough to see the page beside the document: the EQ and the sample stay in reach, so a
+   track playing can still be stopped. The disc moves over to the document's edge. */
+@media (min-width: 841px) {
+  .doc-open .disc-toggle { right: calc(600px + var(--gutter)); opacity: 1; pointer-events: auto; }
+  .doc-open .play { opacity: 1; pointer-events: auto; }
+}
+
+.doc-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 var(--gutter);
+  border-bottom: 1px solid var(--ink);
+}
+.doc-tabs { display: flex; gap: 28px; font-size: 16px; }
+.doc-tabs a { color: var(--mute); }
+.doc-tabs a[aria-current="page"] { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
+.doc-end { display: flex; align-items: center; gap: 20px; }
+.doc-lang { font-size: 16px; color: var(--mute); }
+.doc-lang button { padding: 0; border: 0; background: none; font: inherit; color: var(--mute); cursor: pointer; }
+.doc-lang button[aria-pressed="true"] { color: var(--ink); }
+.doc-close { width: 32px; height: 32px; margin-right: -6px; padding: 6px; border: 0; background: none; color: var(--ink); cursor: pointer; }
+.doc-close svg { width: 100%; height: 100%; }
+
+.doc-body {
+  overflow: auto;
+  padding: 28px var(--gutter) 96px;
+  font-size: 15px;
+  line-height: 1.75;
+  word-break: keep-all;
+  overscroll-behavior: contain;
+}
+.doc-body > * + * { margin-top: 16px; }
+.doc-kicker { font-size: 12px; color: var(--mute); letter-spacing: 0.04em; text-transform: uppercase; }
+.doc-body h1 { margin-top: 6px; font-size: 32px; font-weight: 600; line-height: 1.25; letter-spacing: -0.03em; }
+.doc-lead { font-size: 17px; line-height: 1.65; }
+.doc-note { color: var(--mute); font-size: 13px; }
+.doc-body a:not(.doc-download) { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.doc-body b { font-weight: 600; }
+
+.doc-body section { margin-top: 44px; padding-top: 14px; border-top: 1px solid var(--ink); }
+.doc-body section > * + * { margin-top: 12px; }
+.doc-body h2 { display: flex; gap: 14px; align-items: baseline; font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+.doc-body h2 span { font-size: 12px; font-weight: 400; color: var(--mute); }
+
+.doc-body dl { display: grid; grid-template-columns: 120px 1fr; }
+.doc-body dt, .doc-body dd { padding: 10px 0; border-bottom: 1px solid #e4e4e4; }
+.doc-body dt { font-weight: 600; }
+.doc-body ul { padding-left: 1.1em; }
+.doc-body li + li { margin-top: 6px; }
+
+.doc-steps { list-style: none; counter-reset: step; }
+.doc-steps li { counter-increment: step; position: relative; padding: 12px 0 12px 44px; border-bottom: 1px solid #e4e4e4; }
+.doc-steps li::before {
+  content: counter(step);
+  position: absolute; left: 0; top: 13px;
+  width: 26px; height: 26px; border: 1px solid var(--ink); border-radius: 50%;
+  display: grid; place-items: center; font-size: 12px;
+}
+.doc-steps li p { margin-top: 2px; color: #333; }
+
+.doc-body code { font: 13px/1.5 ui-monospace, "SF Mono", Menlo, monospace; background: #f2f2f2; padding: 1px 5px; border-radius: 3px; }
+kbd { font: 12px ui-monospace, Menlo, monospace; padding: 1px 6px; border: 1px solid #bbb; border-bottom-width: 2px; border-radius: 4px; }
+
+.doc-download, .doc-try {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 12px 20px; border: 1px solid var(--ink); border-radius: 999px;
+  background: var(--ink); color: var(--paper); font: inherit; font-size: 15px; cursor: pointer;
+}
+.doc-download:hover { background: #333; }
+.doc-try { background: none; color: var(--ink); }
+.doc-elsewhere > * + *, .doc-after > * + * { margin-top: 12px; }
+.doc-after { padding: 16px 18px; border: 1px solid var(--ink); border-radius: 12px; }
+.doc-drag { display: block; width: 240px; max-width: 100%; }
+.doc-drag rect, .doc-drag path { fill: none; stroke: var(--ink); stroke-width: 1.2; }
+.doc-drag .note { fill: var(--ink); stroke: none; shape-rendering: crispEdges; }   /* the favicon's pixel note */
+.doc-drag .arrow { stroke-dasharray: 6 5; animation: drag 1.2s linear infinite; }
+@keyframes drag { to { stroke-dashoffset: -11; } }
+@media (prefers-reduced-motion: reduce) { .doc-drag .arrow { animation: none; } }
+.doc-try:hover { background: var(--ink); color: var(--paper); }
+
+@media (max-width: 600px) {
+  .doc-body dl { grid-template-columns: 1fr; }
+  .doc-body dt { padding-bottom: 0; border-bottom: 0; }
+  .doc-body h1 { font-size: 26px; }
+}
+
+@media (max-width: 700px) {
+  .disc-art { width: 48px; height: 48px; }
+  .ring { --ring-r: 1000px; bottom: 64px; height: 120px; }
+  .ring li { top: 8px; width: 67px; height: 76px; }
+  .disc-cursor { top: 24px; }
+  .console {
+    top: auto;
+    bottom: 12px;
+    right: auto;
+    left: 50%;
+    height: min(52%, calc((100vw - 32px) * 704 / 534));
+    transform: translate(-50%, calc(100% + 40px));
+  }
+  .console-open .console { transform: translate(-50%, 0); }
+  /* The console comes up over it, with its own play key. */
+  .console-open .play { opacity: 0; pointer-events: none; }
+}
+
+@media (max-width: 600px) {
+  /* The chips scroll sideways, clear of the disc up in the corner. */
+  #finishes, #horns {
+    max-width: calc(100vw - var(--gutter) * 2 - 64px);
+    overflow-x: auto;
+    scrollbar-width: none;
+    touch-action: pan-x;
+    mask-image: linear-gradient(to right, #000 85%, transparent);
+  }
+  #finishes::-webkit-scrollbar, #horns::-webkit-scrollbar { display: none; }
+  nav { gap: 18px; font-size: 14px; }
+  .caption { flex-direction: column; gap: 0; }
+  .hint { left: var(--gutter); right: auto; }
+  .play { bottom: 32px; }
+}

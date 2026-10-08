@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spuki</title>
+  <meta name="description" content="A desktop speaker for macOS that puts a system-wide EQ on everything your Mac plays.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <!-- The preview a shared link shows: HIVE with its notes, 1200×630 (og.png). -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://spuki.app/">
+  <meta property="og:title" content="Spuki">
+  <meta property="og:description" content="A desktop speaker for macOS that puts a system-wide EQ on everything your Mac plays.">
+  <meta property="og:image" content="https://spuki.app/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Spuki's HIVE speaker, notes rising from its horn">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <header class="bar">
+    <a class="logo" href="./" aria-label="spuki">
+      <svg id="wordmark" role="img" aria-hidden="true"></svg>
+    </a>
+    <nav>
+      <a href="#guide" data-doc="guide">guide</a>
+      <a href="#install" data-doc="install">install</a>
+    </nav>
+  </header>
+
+  <main>
+    <div id="stage" aria-label="3D speaker. Drag to turn it, click to play the woofer."></div>
+    <ol class="ring" id="ring" aria-label="Speakers"></ol>
+    <div class="intro">
+      <p class="caption"><span id="name">ALLOY</span><span id="desc"></span></p>
+      <div class="chips" id="front-row" hidden>
+        <p class="chip-head"><span class="chip-label">FRONT</span><span class="chip-name" id="front-name"></span></p>
+        <ul id="finishes" aria-label="Front colour"></ul>
+      </div>
+      <div class="chips" id="horn-row" hidden>
+        <p class="chip-head"><span class="chip-label">HORN</span><span class="chip-name" id="horn-name"></span></p>
+        <ul id="horns" aria-label="Horn colour"></ul>
+      </div>
+      <button class="shuffle" id="shuffle" hidden title="Shuffle" aria-label="Shuffle the colours">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.97a4 4 0 0 0 3.3-1.7l5.45-7.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.97a4 4 0 0 1 3.3 1.7l.36.5"/><path d="M22 18h-6.04a4 4 0 0 1-3.3-1.8l-.36-.45"/></svg>
+      </button>
+    </div>
+    <p class="hint">Drag to turn · Click to thump</p>
+    <button class="play" id="play" aria-pressed="false"><i aria-hidden="true"></i><span data-label>Play a sample</span><span class="play-track" data-track></span></button>
+    <p class="loading" id="loading">Loading</p>
+    <button class="disc-toggle" id="console-toggle" aria-expanded="false" aria-controls="console" title="Open the EQ">
+      <span class="disc-art"><svg viewBox="0 0 6 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="2" y="0" width="1" height="1"/><rect x="3" y="0" width="1" height="1"/><rect x="4" y="0" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/><rect x="2" y="1" width="1" height="1"/><rect x="5" y="1" width="1" height="1"/><rect x="2" y="2" width="1" height="1"/><rect x="4" y="2" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="2" y="4" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="0" y="7" width="1" height="1"/><rect x="1" y="7" width="1" height="1"/><rect x="2" y="7" width="1" height="1"/></svg></span><span>EQ</span>
+      <svg class="disc-cursor" viewBox="-1 -1 13 19" aria-hidden="true"><polygon points="0,0 0,14 3,11 5,16 7,15 5,10 10,10"/></svg>
+    </button>
+    <aside class="console" id="console" aria-label="Spuki EQ" inert></aside>
+  </main>
+
+  <footer class="bar picker">
+    <div class="picker-end">
+      <a class="credit" href="https://github.com/waterbinnn">made by @waterbinnn</a>
+    </div>
+  </footer>
+
+  <aside class="doc" id="doc" aria-label="Documentation" inert>
+    <div class="doc-bar">
+      <nav class="doc-tabs">
+        <a href="#guide" data-doc="guide">guide</a>
+        <a href="#install" data-doc="install">install</a>
+      </nav>
+      <div class="doc-end">
+        <p class="doc-lang"><button data-lang="en">en</button> / <button data-lang="ko">ko</button></p>
+        <button class="doc-close" id="doc-close" aria-label="Close">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12 3v5h5M12 8l6-6M8 17v-5H3M8 12l-6 6" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+        </button>
+      </div>
+    </div>
+    <article class="doc-body" id="doc-body"></article>
+  </aside>
+
+  <template id="doc-guide-ko">
+    <p class="doc-kicker">Guide</p>
+    <h1>Spuki 사용법</h1>
+    <p class="doc-lead">Spuki는 바탕화면에 작은 스피커를 한 대 올려 두는 앱입니다. 음악, 영상, 브라우저 등 Mac에서 나오는 모든 소리를 원하는 느낌으로 바꿀 수 있고, 음악이 나오면 스피커에서 음표가 튀어나옵니다.</p>
+    <button class="doc-try" data-open-console>이 페이지에서 EQ 열어 보기</button>
+
+    <section>
+      <h2><span>01</span>스피커 다루기</h2>
+      <p>Spuki를 실행하면 바탕화면에 스피커가 나타납니다. 평소에는 다른 창 뒤에 있어서, 창을 치우면 보입니다.</p>
+      <dl>
+        <dt>EQ 열기</dt><dd>스피커를 클릭하면 소리를 조절하는 EQ 창이 열립니다. 메뉴 막대의 음표 아이콘에서 <b>Open EQ</b>를 골라도 됩니다. 창 바깥을 클릭하거나 Esc를 누르면 닫힙니다.</dd>
+        <dt>자리 옮기기</dt><dd>스피커를 끌어서 원하는 곳에 둡니다.</dd>
+        <dt>숨기기</dt><dd>화면 맨 위 메뉴 막대의 음표 아이콘을 누르고 <b>Hide Speaker</b>를 고릅니다. 다시 보려면 같은 메뉴에서 <b>Show Speaker</b>를 고르거나, Dock의 Spuki 아이콘을 누릅니다.</dd>
+        <dt>항상 보이게 하기</dt><dd>메뉴 막대의 음표 아이콘에서 <b>Keep on Top</b>을 고르면, 스피커가 다른 창에 가려지지 않습니다.</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2><span>02</span>소리 바꾸기</h2>
+      <p>EQ 창 위쪽의 화면에는 <b>HOME · EQ · MODE · DESIGN · SET</b> 탭이 있습니다. 소리는 주로 MODE와 EQ 탭에서 바꿉니다.</p>
+      <dl>
+        <dt>모드 고르기</dt><dd><b>MODE</b> 탭에서 목록을 눌러 고릅니다. 저음 강조, 보컬, 밤, 재즈처럼 상황과 장르에 맞춘 모드가 21가지 준비되어 있습니다. 모드를 바꿔도 소리 크기가 갑자기 커지거나 작아지지 않도록 Spuki가 맞춰 줍니다. 아래쪽 휠의 <b>MODE</b>를 누르면 목록의 다음 모드로 바로 넘어갑니다.</dd>
+        <dt>자세히 조절하기</dt><dd><b>EQ</b> 탭에서 낮은 소리(왼쪽)부터 높은 소리(오른쪽)까지 10개 막대를 끌어 올리거나 내립니다. 막대를 더블클릭하면 0으로 돌아갑니다.</dd>
+        <dt>EQ 값 붙여넣기</dt><dd>내 헤드폰에 맞춰 만들어진 EQ 값을 그대로 가져와, 헤드폰의 소리를 고르게 바로잡는 기능입니다. EQ 탭 아래쪽의 <b>PASTE EQ</b>를 누르고, AutoEq 등에서 복사한 EQ 값을 붙여넣은 뒤 <b>SAVE</b>를 누릅니다. 붙여넣은 값은 그때 쓰고 있던 헤드폰이나 스피커에만 적용됩니다.</dd>
+        <dt>저장하기</dt><dd>마음에 드는 소리는 <b>SAVE</b>를 눌러 M1~M3 칸에 저장해 두고, MODE 탭에서 다시 불러옵니다.</dd>
+        <dt>원래대로</dt><dd>EQ 탭의 <b>RESET</b>을 누르면 지금 고른 모드나 저장 칸의 원래 소리로 돌아갑니다. <b>EQ.ON</b>을 누르면 잠시 꺼 두고 원래 소리와 비교해 볼 수 있습니다.</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2><span>03</span>음악 조작하기</h2>
+      <dl>
+        <dt>재생 정보</dt><dd><b>HOME</b> 탭에 지금 나오는 곡과 재생 시간, 소리의 모양이 나타납니다.</dd>
+        <dt>재생과 곡 넘기기</dt><dd>아래쪽 휠의 왼쪽과 오른쪽을 누르면 이전 곡과 다음 곡으로 넘어가고, 아래쪽을 누르면 재생하거나 일시 정지합니다.</dd>
+        <dt>소리 크기</dt><dd>EQ 창 오른쪽 옆면에 튀어나온 <b>+</b>와 <b>−</b> 버튼으로 소리 크기를 바꿉니다. 누르고 있으면 계속 바뀝니다.</dd>
+        <dt>음소거</dt><dd>휠 가운데의 둥근 판을 누르면 소리가 꺼지고, 판 위의 음표도 어두워집니다. 한 번 더 누르면 다시 켜집니다.</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2><span>04</span>스피커 모양 바꾸기</h2>
+      <p><b>DESIGN</b> 탭에서 ALLOY, TULIP, SUMMER 세 가지 스피커 중 하나를 고릅니다. 고른 뒤 <b>SAVE</b>를 눌러야 바탕화면의 스피커가 바뀝니다.</p>
+    </section>
+
+    <section>
+      <h2><span>05</span>설정과 종료</h2>
+      <dl>
+        <dt>설정</dt><dd><b>SET</b> 탭에서 스피커 크기, Mac을 켤 때 자동으로 실행할지, 스피커를 항상 위에 둘지, 새 버전을 확인할지 정합니다.</dd>
+        <dt>새 버전</dt><dd>새 버전이 나오면 메뉴 막대의 음표 옆에 작은 점이 생깁니다. 음표 아이콘에서 <b>Update to Spuki …</b>를 고르면 업데이트 창이 열립니다. 창의 안내대로 설치하면 Spuki가 새 버전으로 다시 실행됩니다.</dd>
+        <dt>종료</dt><dd>메뉴 막대의 음표 아이콘에서 <b>Quit Spuki</b>를 고릅니다. 종료하면 소리는 원래대로 돌아옵니다. 다시 켜려면 <kbd>⌘</kbd> <kbd>Space</kbd>를 눌러 Spuki를 검색합니다.</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2><span>06</span>개인정보</h2>
+      <ul>
+        <li>Spuki가 인터넷을 쓰는 일은 하루 한 번 새 버전이 있는지 확인하는 것뿐입니다. 사용 기록은 모으지 않고, SET 탭에서 이 확인도 끌 수 있습니다.</li>
+        <li>Mac의 소리는 바꿔서 들려주는 데에만 쓰고, 녹음하거나 저장하지 않습니다.</li>
+        <li>곡 제목은 EQ 창에 보여 주는 데에만 씁니다.</li>
+      </ul>
+    </section>
+  </template>
+
+  <template id="doc-install-ko">
+    <p class="doc-kicker">Install</p>
+    <h1>Spuki 설치하기</h1>
+    <div data-mac-only>
+      <a class="doc-download" data-download href="https://github.com/waterbinnn/spuki/releases/latest/download/Spuki.dmg">Spuki 내려받기 <span>↓</span></a>
+    </div>
+    <div class="doc-elsewhere" data-not-mac hidden>
+      <p><b>Spuki는 Mac 앱입니다.</b> Mac에서 이 페이지를 열면 바로 내려받을 수 있습니다.</p>
+      <button class="doc-try" data-copy data-copied="링크를 복사했습니다">링크 복사하기</button>
+    </div>
+    <div class="doc-after" data-after hidden>
+      <p><b>다운로드가 시작되었습니다.</b> 받은 <b>Spuki.dmg</b>를 열고, 창 안의 Spuki를 Applications 폴더로 끌어다 놓으세요.</p>
+      <svg class="doc-drag" viewBox="0 0 240 72" aria-hidden="true"><rect x="12" y="12" width="48" height="48" rx="11"/><path class="note" transform="translate(24 24) scale(3)" d="M3 0h4v1H3zM3 1h1v1H3zM6 1h1v1H6zM3 2h1v1H3zM5 2h2v1H5zM3 3h1v3H3zM1 6h3v2H1z"/><path class="arrow" d="M80 36h72m-9-8 9 8-9 8"/><path d="M172 17h18l5 6h33v32h-56z"/></svg>
+    </div>
+    <p class="doc-note">지원 기기: Apple Silicon Mac (M1 이후)<br>운영체제: macOS 15 이상</p>
+
+    <section>
+      <h2><span>01</span>설치 순서</h2>
+      <ol class="doc-steps">
+        <li><b>내려받기</b><p>위 버튼을 누르면 <b>Spuki.dmg</b>가 다운로드 폴더에 바로 받아집니다.</p></li>
+        <li><b>응용 프로그램 폴더로 옮기기</b><p>Spuki.dmg를 더블클릭해서 열고, 창 안의 Spuki를 옆에 있는 <b>Applications</b> 폴더로 끌어다 놓습니다. 다 옮겼으면 Finder 사이드바에서 Spuki 옆의 꺼내기 버튼을 눌러 DMG를 닫아도 됩니다.</p></li>
+        <li><b>처음 열기</b><p>응용 프로그램 폴더에서 Spuki를 엽니다. "인터넷에서 다운로드한 앱입니다"라는 확인 창이 나오면 <b>열기</b>를 누릅니다. 이 창은 처음 한 번만 나옵니다.</p></li>
+        <li><b>소리 권한 허용하기</b><p>Spuki가 시스템 오디오에 접근해도 되는지 물으면 <b>허용</b>을 누릅니다. 이 권한이 있어야 Mac에서 나오는 소리에 EQ를 적용할 수 있습니다. 설치가 끝나면 바탕화면에 스피커가 나타납니다.</p></li>
+      </ol>
+    </section>
+  </template>
+
+  <template id="doc-guide-en">
+    <p class="doc-kicker">Guide</p>
+    <h1>Using Spuki</h1>
+    <p class="doc-lead">Spuki puts a small speaker on your desktop. It lets you shape everything your Mac plays, from music and videos to the browser, and when music is on, notes pop out of the speaker.</p>
+    <button class="doc-try" data-open-console>Try the EQ on this page</button>
+
+    <section>
+      <h2><span>01</span>The speaker</h2>
+      <p>When Spuki is running, a speaker sits on your desktop. It normally stays behind other windows, so move them aside to see it.</p>
+      <dl>
+        <dt>Open the EQ</dt><dd>Click the speaker to open the EQ, where you shape the sound, or choose <b>Open EQ</b> from the note icon in the menu bar. Click outside it or press Esc to close it.</dd>
+        <dt>Move it</dt><dd>Drag the speaker wherever you like.</dd>
+        <dt>Hide it</dt><dd>Click the note icon in the menu bar at the top of the screen and choose <b>Hide Speaker</b>. To bring it back, choose <b>Show Speaker</b> from the same menu, or click Spuki in the Dock.</dd>
+        <dt>Keep it in view</dt><dd>Choose <b>Keep on Top</b> from the note icon in the menu bar, and other windows won't cover it.</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2><span>02</span>Changing the sound</h2>
+      <p>The screen at the top of the EQ has five tabs: <b>HOME · EQ · MODE · DESIGN · SET</b>. You change the sound mostly with the MODE and EQ tabs.</p>
+      <dl>
+        <dt>Pick a mode</dt><dd>On the <b>MODE</b> tab, tap one in the list. There are 21, for situations and genres: bass boost, vocal, night, jazz and more. Spuki keeps the loudness about the same when you switch, so nothing jumps. <b>MODE</b> on the wheel below skips straight to the next one.</dd>
+        <dt>Fine changes</dt><dd>On the <b>EQ</b> tab, drag the ten bars, from low sounds on the left to high sounds on the right. Double-click a bar to set it back to 0.</dd>
+        <dt>Paste an EQ</dt><dd>Brings in EQ values made for your headphones, to even out how they sound. Press <b>PASTE EQ</b> at the bottom of the EQ tab, paste EQ values copied from AutoEq or elsewhere, and press <b>SAVE</b>. They apply only to the headphones or speaker you were using at the time.</dd>
+        <dt>Save it</dt><dd>When you like a sound, press <b>SAVE</b> to keep it in slot M1, M2 or M3, and load it again from the MODE tab.</dd>
+        <dt>Start over</dt><dd><b>RESET</b> on the EQ tab undoes your changes to the mode or slot you picked. <b>EQ.ON</b> turns the EQ off for a moment, so you can compare.</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2><span>03</span>Controlling the music</h2>
+      <dl>
+        <dt>What's playing</dt><dd>The <b>HOME</b> tab shows the song, how far in it is, and the shape of the sound.</dd>
+        <dt>Play and skip</dt><dd>Press the left or right of the wheel for the previous or next song, and the bottom to play or pause.</dd>
+        <dt>Volume</dt><dd>The <b>+</b> and <b>−</b> keys sticking out of the EQ's right side set how loud it plays. Hold one to keep going.</dd>
+        <dt>Mute</dt><dd>Press the round disc in the middle of the wheel to mute; the note on it goes dark. Press again to turn the sound back on.</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2><span>04</span>Changing the speaker</h2>
+      <p>On the <b>DESIGN</b> tab, pick one of three speakers: ALLOY, TULIP or SUMMER. Press <b>SAVE</b> to put it on your desktop.</p>
+    </section>
+
+    <section>
+      <h2><span>05</span>Settings and quitting</h2>
+      <dl>
+        <dt>Settings</dt><dd>On the <b>SET</b> tab, choose how big the speaker is, whether Spuki opens when your Mac starts, whether the speaker stays on top, and whether it checks for new versions.</dd>
+        <dt>New versions</dt><dd>When a new version is out, a small dot appears next to the note in the menu bar. Choose <b>Update to Spuki …</b> from it, and install from the window that opens; Spuki relaunches on the new version.</dd>
+        <dt>Quit</dt><dd>Choose <b>Quit Spuki</b> from the note icon in the menu bar. The sound goes back to normal. To open it again, press <kbd>⌘</kbd> <kbd>Space</kbd> and search for Spuki.</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2><span>06</span>Privacy</h2>
+      <ul>
+        <li>The only thing Spuki does online is check for a new version once a day. It collects no usage data, and you can turn the check off on the SET tab.</li>
+        <li>Your Mac's sound is only reshaped and played back, never recorded or saved.</li>
+        <li>Song titles are only shown on the EQ's screen.</li>
+      </ul>
+    </section>
+  </template>
+
+  <template id="doc-install-en">
+    <p class="doc-kicker">Install</p>
+    <h1>Installing Spuki</h1>
+    <div data-mac-only>
+      <a class="doc-download" data-download href="https://github.com/waterbinnn/spuki/releases/latest/download/Spuki.dmg">Download Spuki <span>↓</span></a>
+    </div>
+    <div class="doc-elsewhere" data-not-mac hidden>
+      <p><b>Spuki is a Mac app.</b> Open this page on your Mac to download it.</p>
+      <button class="doc-try" data-copy data-copied="Link copied">Copy the link</button>
+    </div>
+    <div class="doc-after" data-after hidden>
+      <p><b>Your download has started.</b> Open <b>Spuki.dmg</b> and drag Spuki into the Applications folder next to it.</p>
+      <svg class="doc-drag" viewBox="0 0 240 72" aria-hidden="true"><rect x="12" y="12" width="48" height="48" rx="11"/><path class="note" transform="translate(24 24) scale(3)" d="M3 0h4v1H3zM3 1h1v1H3zM6 1h1v1H6zM3 2h1v1H3zM5 2h2v1H5zM3 3h1v3H3zM1 6h3v2H1z"/><path class="arrow" d="M80 36h72m-9-8 9 8-9 8"/><path d="M172 17h18l5 6h33v32h-56z"/></svg>
+    </div>
+    <p class="doc-note">Devices: Apple silicon Macs (M1 or later)<br>System: macOS 15 or later</p>
+
+    <section>
+      <h2><span>01</span>Steps</h2>
+      <ol class="doc-steps">
+        <li><b>Download</b><p>The button above saves <b>Spuki.dmg</b> straight to your Downloads folder.</p></li>
+        <li><b>Move it to Applications</b><p>Double-click Spuki.dmg to open it, then drag Spuki onto the <b>Applications</b> folder beside it. Once it's copied, you can eject the DMG with the button next to Spuki in the Finder sidebar.</p></li>
+        <li><b>Open it</b><p>Open Spuki from Applications. If macOS says it was downloaded from the internet, click <b>Open</b>. You only see this once.</p></li>
+        <li><b>Allow sound access</b><p>When Spuki asks to access system audio, click <b>Allow</b>. It needs this to apply the EQ to what your Mac plays. Once done, the speaker appears on your desktop.</p></li>
+      </ol>
+    </section>
+  </template>
+
+  <script type="module" src="main.js"></script>
+  <script data-goatcounter="https://subin.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
